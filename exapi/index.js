@@ -1,83 +1,66 @@
-import express from 'express';
-import bodyParser from 'body-parser'
-
-const app = express();
-
-app.use(express.json())
-
-const cors = require('cors')
-
-app.use(cors())
+const express = require('express')
+const app = express()
 
 let notes = [
-     {
-    id: "1",
-    content: "HTML is easy",
-    important: true
+  {
+    id: '1',
+    content: 'HTML is easy',
+    important: true,
   },
   {
-    id: "2",
-    content: "Browser can execute only JavaScript",
-    important: false
+    id: '2',
+    content: 'Browser can execute only JavaScript',
+    important: false,
   },
   {
-    id: "3",
-    content: "GET and POST are the most important methods of HTTP protocol",
-    important: true
-  }
-];
+    id: '3',
+    content: 'GET and POST are the most important methods of HTTP protocol',
+    important: true,
+  },
+]
 
-
-app.use(bodyParser.json());
-
-app.use((req, res, next) => {
-  console.log('Request received:', req.method, req.url);
-  next();
-});
-
-const unknownEndpoint = (req, res) => {
-  res.status(404).send({ error: 'unknown endpoint' })
+const requestLogger = (request, response, next) => {
+  console.log('Method:', request.method)
+  console.log('Path:  ', request.path)
+  console.log('Body:  ', request.body)
+  console.log('---')
+  next()
 }
 
-app.use(unknownEndpoint)
+app.use(express.json())
+app.use(requestLogger)
 
-app.get('/', (req, res) => {
-  res.send('<h1>Hello World!</h1>')
+app.get('/', (request, response) => {
+  response.send('<h1>Hello World!</h1>')
 })
 
-app.get('/api/notes', (req, res) => {
-  res.json(notes)
+app.get('/api/notes', (request, response) => {
+  response.json(notes)
 })
 
-app.get('/api/notes/:id', (req, res) => {
-  const id = req.params.id
-  const note = notes.find(note => note.id === id)
+app.get('/api/notes/:id', (request, response) => {
+  const id = request.params.id
+  const note = notes.find((note) => note.id === id)
 
-   if (note) {
-    res.json(note)
+  if (note) {
+    response.json(note)
   } else {
-    res.status(404).end()
+    response.status(404).end()
   }
-  
 })
-
-// app.get('/', (req, res) => {
-//   res.sendFile(__dirname + '/index.html')
-// })
 
 const generateId = () => {
-  const maxId = notes.length > 0
-    ? Math.max(...notes.map(n => Number(n.id)))
-    : 0
+  const maxId =
+    notes.length > 0 ? Math.max(...notes.map((n) => Number(n.id))) : 0
   return String(maxId + 1)
 }
 
-app.post('/api/notes', (req, res) => {
-  const body = req.body
+app.post('/api/notes', (request, response) => {
+  const body = request.body
 
   if (!body.content) {
-    return res.status(400).json({ 
-      error: 'content missing' 
+    return response.status(400).json({
+      error: 'content missing',
     })
   }
 
@@ -89,19 +72,23 @@ app.post('/api/notes', (req, res) => {
 
   notes = notes.concat(note)
 
-  res.json(note)
+  response.json(note)
 })
 
-app.delete('/api/notes/:id', (req, res) => {
-  const id = req.params.id
-  notes = notes.filter(note => note.id !== id)
+app.delete('/api/notes/:id', (request, response) => {
+  const id = request.params.id
+  notes = notes.filter((note) => note.id !== id)
 
-  res.status(204).end()
+  response.status(204).end()
 })
 
-//app.put()
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
 
-const PORT = process.env.PORT || 3001
+app.use(unknownEndpoint)
+
+const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
